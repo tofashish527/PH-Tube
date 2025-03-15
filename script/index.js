@@ -1,3 +1,25 @@
+
+function showloader()
+{
+    document.getElementById('loader').classList.remove('hidden');
+    document.getElementById('video-container').classList.add("hidden");
+}
+
+function hideloader()
+{
+    document.getElementById('loader').classList.add('hidden');
+    document.getElementById('video-container').classList.remove("hidden");
+}
+
+
+function removeActive(){
+    const activebtn=document.getElementsByClassName('active');
+    for(let btn of activebtn)
+    {
+        btn.classList.remove('active')
+    }
+}
+
 function loadcategories(){
     //fetch the data
     fetch('https://openapi.programming-hero.com/api/phero-tube/categories')
@@ -23,11 +45,16 @@ function displaycategories(categories)
 loadcategories()
 
 
-function loadvideo()
+function loadvideo(searchText ="")
 {
-    fetch('https://openapi.programming-hero.com/api/phero-tube/videos')
+    showloader()
+    fetch(`https://openapi.programming-hero.com/api/phero-tube/videos?title=${searchText}`)
     .then(response=>response.json())
-    .then(data=>displayvideos(data.videos))
+    .then(data=>{
+        removeActive()
+        document.getElementById('btn-all').classList.add('active')
+        displayvideos(data.videos);
+    });
 
 }
 const displayvideos=(videos)=>{
@@ -42,6 +69,7 @@ const displayvideos=(videos)=>{
             <img class="w-[120px]" src="Icon.png" alt="">
             <h2 class="text-2xl font-bold">OOps!! sorry, No content here</h2>
         </div>`
+        hideloader()
         return;
    }
    videos.forEach((video)=>{
@@ -60,25 +88,27 @@ const displayvideos=(videos)=>{
                 <div class="avatar">
                     <div class="ring-primary ring-offset-base-100 w-8 rounded-full ring ring-offset-2">
                       <img src=${video.authors[0].profile_picture} />
+                      
                     </div>
                 </div>
                 </div>
                 <div class="intro ">
                     <h2 class="text-sm font-semibold">Midnight</h2>
-                    <p class="text-gray-400 flex gap-1">${video.authors[0].profile_name}
-                    <img class="w-5 h-5" src=" https://img.icons8.com/?size=64&id=2AuMnRFVB9b1&format=png" alt=""></p>
-                    <p class="text-gray-400">${video.others.views}</p>
+                    <p class="text-gray-400 flex gap-1">${video.authors[0].profile_name} ${video.authors[0].verified==true?`<img class="w-5 h-5" src="https://img.icons8.com/?size=100&id=98A4yZTt9abw&format=png&color=000000"/>`:``}
+                    <p class="text-gray-400">${video.others.views} views</p>
                 </div>
             </div>
-             
+            <button onclick=loadvideodetails('${video.video_id}') class="btn btn-wide">Show Details</button> 
         </div>
     `;
     videocontainer.append(videocard)
    });
+   hideloader()
 };
 //loadvideo()
 
 const loadcategoryvideos=(id)=>{
+    showloader()
    // console.log(id)
     const url=`
     https://openapi.programming-hero.com/api/phero-tube/category/${id}
@@ -87,10 +117,49 @@ const loadcategoryvideos=(id)=>{
     fetch(url)
     .then(res=>res.json())
     .then((data)=>{
+        removeActive()
         const clickbtn=document.getElementById(`btn-${id}`);
         clickbtn.classList.add('active')
-        console.log(clickbtn)
+
         displayvideos(data.category);
     });
         
 };
+
+const loadvideodetails=(videoId)=>{
+  console.log(videoId)
+  const url=`https://openapi.programming-hero.com/api/phero-tube/video/${videoId}`
+  fetch(url)
+  .then(res=>res.json())
+  .then(data=>{
+    displayvideodatails(data.video)
+  })
+}
+
+const displayvideodatails=(video)=>{
+   console.log(video)
+   document.getElementById('video_details').showModal()
+   const detailscontainer=document.getElementById('details_container');
+   detailscontainer.innerHTML=`
+   <h2>${video.title}</h2>
+   <div class="card bg-base-100 image-full shadow-sm">
+  <figure>
+    <img
+      src="${video.thumbnail}"
+      alt="Shoes" />
+  </figure>
+  <div class="card-body">
+    <h2 class="card-title">Card Title</h2>
+    <p>A card component has a figure, a body part, and inside body there are title and actions parts</p>
+    <div class="card-actions justify-end">
+    </div>
+  </div>
+</div>
+   `
+}
+
+document.getElementById('searchinput').addEventListener('keyup',(e)=>{
+    const input=e.target.value;
+    loadvideo(input)
+    console.log(input)
+})
